@@ -110,9 +110,18 @@ html,body{background:#000;margin:0;padding:0;}
 .hud-box>.c2{bottom:-2px;right:-2px;border-left:none;border-top:none;}
 
 /* ---------- title slide ---------- */
-.s-title .hero h1{font-size:clamp(3rem,8.5vw,6.4rem);font-weight:900;line-height:.92;letter-spacing:-.04em;margin:.2rem 0;}
-.meta-row{margin-top:1.8rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--muted);}
+.title-split{display:grid;grid-template-columns:1.15fr .85fr;align-items:center;gap:1.5rem;}
+.s-title .hero h1{font-size:clamp(2.6rem,5.6vw,5.2rem);font-weight:900;line-height:.9;letter-spacing:-.04em;margin:.3rem 0;}
+.meta-row{margin-top:1.6rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--muted);}
 .meta-row span{color:var(--accent-soft);}
+.brand{position:relative;display:flex;align-items:center;justify-content:center;}
+.brand::before{content:"";position:absolute;width:86%;height:86%;border-radius:50%;
+  background:radial-gradient(circle,rgba(225,14,31,.30),transparent 62%);filter:blur(22px);z-index:0;}
+.brand-logo{position:relative;z-index:1;width:min(82%,380px);height:auto;
+  filter:drop-shadow(0 0 26px rgba(225,14,31,.5));animation:float 9s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.close-logo{width:74px;height:auto;margin-bottom:1.3rem;filter:drop-shadow(0 0 16px rgba(225,14,31,.5));
+  animation:float 9s ease-in-out infinite;}
 
 /* ---------- statement slide ---------- */
 .s-statement{display:flex;flex-direction:column;justify-content:center;}
@@ -243,12 +252,17 @@ html,body{background:#000;margin:0;padding:0;}
 
 <!-- ============ 0 · PRE-ROLL ============ -->
 <section data-transition="fade" class="s-title">
-  <div class="hero">
-    <span class="pill"><span class="dot"></span> Live Session · 3 Hours</span>
-    <span class="kicker">Ahmed Qaddoura · @VibeCodingArabic</span>
-    <h1>VIBE <span class="acc">CODING</span><br>MASTERY</h1>
-    <p class="lede">From chat-window chaos to a repeatable system that ships.</p>
-    <div class="meta-row">github.com/AQaddora/<span>pure-skill-suite</span></div>
+  <div class="title-split">
+    <div class="hero">
+      <span class="pill"><span class="dot"></span> Live Session · 3 Hours</span>
+      <span class="kicker">Ahmed Qaddoura · @VibeCodingArabic</span>
+      <h1>VIBE<br><span class="acc">CODING</span><br>MASTERY</h1>
+      <p class="lede">From chat-window chaos to a repeatable system that ships.</p>
+      <div class="meta-row">github.com/AQaddora/<span>pure-skill-suite</span></div>
+    </div>
+    <div class="brand">
+      <img src="logo.png" alt="Ahmed Qaddoura — AQ" class="brand-logo">
+    </div>
   </div>
   <aside class="notes">Welcome. The session starts on time — take a seat. Today: not a workflow, a system.</aside>
 </section>
@@ -723,6 +737,7 @@ html,body{background:#000;margin:0;padding:0;}
 </section>
 
 <section data-transition="fade" class="s-close">
+  <img src="logo.png" alt="" class="close-logo">
   <span class="kicker">End of Session</span>
   <h1>The session ends.<br>The <span class="acc">loop continues.</span></h1>
   <div class="sig">Ahmed Qaddoura · @VibeCodingArabic</div>

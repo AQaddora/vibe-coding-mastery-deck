@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>تيليبرومتر · الجلسة 2 · فن كتابة البرومبت</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000; --txt:#fff; --txt2:#A8B0C0; --muted:#5E6678;
+  --accent:#E10E1F; --accent-soft:#FF2A3F; --glow:rgba(225,14,31,.45);
+  --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Tajawal',system-ui,sans-serif;
+  --fs:2.4rem;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden;}
+body{font-family:var(--sans);color:var(--txt2);}
+
+/* ---------- control bar ---------- */
+.bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:.6rem;
+  padding:.6rem 1rem;background:rgba(10,10,15,.92);border-bottom:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(6px);font-family:var(--mono);flex-wrap:wrap;}
+.bar button{appearance:none;border:1px solid rgba(225,14,31,.5);background:rgba(225,14,31,.08);
+  color:#fff;font-family:var(--mono);font-size:.8rem;padding:.45rem .75rem;border-radius:8px;cursor:pointer;letter-spacing:.05em;}
+.bar button:hover{background:rgba(225,14,31,.25);}
+.bar button.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 14px var(--glow);}
+.bar .grp{display:flex;align-items:center;gap:.3rem;padding:0 .5rem;border-right:1px solid rgba(255,255,255,.1);}
+.bar .grp:last-child{border-right:none;}
+.bar .lbl{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-left:.4rem;}
+.bar .val{font-size:.72rem;color:var(--accent-soft);min-width:2.4ch;text-align:center;}
+.bar .prog{flex:1;font-size:.68rem;color:var(--muted);text-align:left;direction:ltr;}
+.bar .prog b{color:#fff;}
+
+/* ---------- progress rail ---------- */
+.railwrap{position:fixed;top:46px;left:0;right:0;height:3px;background:#15171f;z-index:49;}
+.railwrap i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-soft));
+  box-shadow:0 0 10px var(--glow);width:0%;transition:width .15s linear;}
+
+/* ---------- stage ---------- */
+.stage{position:absolute;top:50px;bottom:0;left:0;right:0;overflow-y:auto;scroll-behavior:auto;}
+.stage::-webkit-scrollbar{width:0;}
+.wrap{max-width:1000px;margin:0 auto;padding:18vh 3rem 60vh;}
+
+.block{margin-bottom:6rem;padding-top:2.5rem;}
+.block .tag{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--mono);
+  font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+  border:1px solid rgba(225,14,31,.45);border-radius:999px;padding:.35rem .9rem;margin-bottom:1.6rem;}
+.block .tag .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.block p{font-size:var(--fs);line-height:1.65;color:var(--txt2);font-weight:500;margin:0 0 1.3rem;
+  transition:color .3s, opacity .3s;}
+.block p b{color:#fff;font-weight:900;}
+.block p .note{color:var(--accent-soft);font-family:var(--mono);font-size:.5em;display:block;margin-top:.3rem;}
+.block.current p{color:#fff;}
+.block .pause{text-align:center;color:var(--muted);font-family:var(--mono);letter-spacing:.3em;
+  font-size:.8rem;margin:2.5rem 0;opacity:.5;}
+
+.stage.dim .block p{opacity:.35;}
+.stage.dim .block.current p{opacity:1;}
+
+@media (max-width:700px){
+  .wrap{padding:16vh 1.2rem 50vh;}
+  .bar .lbl{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="grp">
+    <button id="playBtn">▶ تشغيل</button>
+  </div>
+  <div class="grp">
+    <span class="lbl">سرعة</span>
+    <button id="spdDown">–</button>
+    <span class="val" id="spdVal">3</span>
+    <button id="spdUp">+</button>
+  </div>
+  <div class="grp">
+    <span class="lbl">خط</span>
+    <button id="fontDown">–</button>
+    <span class="val" id="fontVal">24</span>
+    <button id="fontUp">+</button>
+  </div>
+  <div class="grp">
+    <button id="prevBlock">↑ بلوك</button>
+    <button id="nextBlock">↓ بلوك</button>
+  </div>
+  <div class="grp">
+    <button id="dimToggle">تركيز</button>
+  </div>
+  <div class="prog"><b id="blockNum">1</b> / <span id="blockTotal">0</span> · Session 2 · فن كتابة البرومبت</div>
+</div>
+<div class="railwrap"><i id="railFill"></i></div>
+
+<div class="stage" id="stage">
+  <div class="wrap" id="wrap">
+
+    <div class="block" data-slide="1–2">
+      <span class="tag"><span class="dot"></span>بلوك 1 / سلايد 1–2 — الهوك</span>
+      <p>طيب، رجعنا. الجلسة الأولى حكينا فيها عن الـPURE، عن النظام، عن الانضباط.</p>
+      <p>اليوم بدنا نحكي عن شي أساسي أكتر، وبصراحة أكتر ناس بتستخف فيه.</p>
+      <p>فن كتابة البرومبت.</p>
+      <p>وقبل ما حدا يقول "يا زلمة هاد بسيط، بس بتكتب سؤال" — خليني أوريكم شي.</p>
+      <p class="pause">[ ══ وقفة قصيرة ══ ]</p>
+      <p>نفس السؤال بالظبط. مرتين. لنفس الـAI. بنفس اليوم.</p>
+      <p>مرة كتبت: <b>"اشرحلي الجاذبية."</b> جاوبني جواب من كتاب مدرسي، عادي، ما إله طعم.</p>
+      <p>ومرة كتبت: <b>"تصرف كأنك معلّم فيزياء صبور، عم تشرح الجاذبية لولد فضولي عمره 10 سنين، واستخدم تشبيه من الحياة اليومية."</b></p>
+      <p>نفس الموديل. غيّرت بس طريقة السؤال.</p>
+      <p>والجواب صار شي فعلاً بيعلّم، مش بس بيعبّي مساحة.</p>
+      <p><b>إنتوا كنتوا محظوظين مع الـAI لهلأ. مش شاطرين.</b></p>
+    </div>
+
+    <div class="pause">[ ══ قطع + انتقال لسلايد "المشكلة الحقيقية" ══ ]</div>
+
+    <div class="block" data-slide="3–5">
+      <span class="tag"><span class="dot"></span>بلوك 2 / سلايد 3–5 — المشكلة الحقيقية</span>
+      <p>المشكلة مش بالـAI. الـAI نفسه ما تغيّر بين السؤالين.</p>
+      <p>المشكلة كانت في التعليمات يلي أعطيتها.</p>
+      <p>سؤال غامض → جواب غامض ومتوسط.</p>
+      <p>سؤال دقيق → جواب مبني خصيصي لحالتك إنت.</p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p>وكتابة البرومبت مش سحر، ومش شي بيعرفه بس "الخبراء".</p>
+      <p>هي إنك تعطي الـAI نفس المعلومات يلي رح تعطيها لموظف جديد شاطر، أول يوم إله بالشركة.</p>
+      <p>مهارة. قابلة للتكرار. بتتحسن بالممارسة.</p>
+      <p><b>اسأل صح → اطلع الجواب صح → كرر وحسّن.</b></p>
+      <p>وهاي الجلسة، بنهايتها، رح يطلع معكم:</p>
+      <p>المكونات الخمسة لبرومبت قوي. حركات التكرار يلي بتصلّح أي جواب ضعيف. أربع قواعد ذهبية. وثلاث تمارين عملية رح نسويها سوا هلأ.</p>
+    </div>
+
+    <div class="pause">[ ══ قطع + انتقال لسلايد المكونات الخمسة ══ ]</div>
+
+    <div class="block" data-slide="6–9">
+      <span class="tag"><span class="dot"></span>بلوك 3 / سلايد 6–9 — المكونات الخمسة</span>
+      <p>خمس مكونات. لو حفظتوا شي واحد بس من هاي الجلسة، خلّيه هاد.</p>
+      <p><b>Role — الدور:</b> مين بدك الـAI يكون. "تصرف كـ..."</p>
+      <p><b>Context — السياق:</b> الخلفية يلي الـAI ما بيعرفها إلا إذا حكيتلها ياها.</p>
+      <p><b>Task — المهمة:</b> شو بالظبط بدك تصير. بشكل واضح.</p>
+      <p><b>Format — الشكل:</b> جدول؟ نقاط؟ عدد كلمات محدد؟</p>
+      <p><b>Examples — أمثلة:</b> شكلولي كيف شكل "الجواب الصح" يلي ببالك.</p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p>مش كل برومبت محتاج الخمسة كلهم.</p>
+      <p>بس أي برومبت ضعيف — ناقصه واحد منهم على الأقل. مضمونة.</p>
+      <p>هلأ خلينا نركّبهم سوا بجملة وحدة:</p>
+      <p><i>"تصرف كمعلّم أحياء صبور. أنا عمري 15، عم بدرس لامتحان عن الخلية، والرسومات بتلخبطني. اشرحلي أجزاء الخلية بجدول بسيط، وحط تشبيه من الحياة اليومية لكل جزء."</i></p>
+      <p>Role + Context + Task + Format — بجملتين، مش أكتر.</p>
+    </div>
+
+    <div class="pause">[ ══ قطع + انتقال للقواعد الذهبية ══ ]</div>
+
+    <div class="block" data-slide="10–11">
+      <span class="tag"><span class="dot"></span>بلوك 4 / سلايد 10–11 — القواعد الذهبية</span>
+      <p>أربع قواعد، بتنطبق دايماً، مهما كان السؤال:</p>
+      <p><b>1. كون محدد.</b> غامض بيدخل، غامض بيطلع.</p>
+      <p><b>2. أعطي سياق.</b> الـAI ما بيقرأ أفكارك.</p>
+      <p><b>3. اطلب شكل محدد للجواب.</b> جدول، نقاط، عدد كلمات، خطوة بخطوة.</p>
+      <p><b>4. دايماً تأكد من المعلومات المهمة.</b> ما تصدق كل شي على عينه.</p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p><b>غامض بيدخل. غامض بيطلع.</b></p>
+    </div>
+
+    <div class="pause">[ ══ قطع + انتقال لقسم "التكرار أقوى من الإعادة" ══ ]</div>
+
+    <div class="block" data-slide="12–15">
+      <span class="tag"><span class="dot"></span>بلوك 5 / سلايد 12–15 — التكرار أقوى من الإعادة</span>
+      <p>طيب، شو بتسووا لما الجواب مش مظبوط تمام؟</p>
+      <p>أغلب الناس بيسكروا المحادثة وبيبلشوا من الصفر.</p>
+      <p>غلط.</p>
+      <p>ادفع بنفس المحادثة — الـAI أصلاً عنده كل السياق يلي عطيته ياه.</p>
+      <p><b>التكرار دايماً أسرع من الإعادة.</b></p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p>خمس حركات بتصلّح تقريباً أي جواب أول ضعيف:</p>
+      <p>"اختصرلي هاد." "اشرحلي النقطة الثالثة بشكل أبسط." "أعطيني مثال ملموس." "حوّل هاد لجدول." و — الأهم — "شو الأسئلة يلي المفروض أسألها وما سألتها؟"</p>
+      <p>احفظوهم. بيغطوا تسعين بالمية من الأجوبة الضعيفة الأولى.</p>
+      <p>وشي أخير قبل البريك — امسكوا "دفتر برومبتات".</p>
+      <p>احفظوا البرومبتات يلي نجحت معكم. لا تعيدوا اختراعها كل مرة.</p>
+    </div>
+
+    <div class="pause">[ ══ إعلان البريك ══ ]</div>
+
+    <div class="block" data-slide="break">
+      <span class="tag"><span class="dot"></span>بلوك 6 / البريك — 10 دقايق</span>
+      <p>طيب، بريك عشر دقايق.</p>
+      <p>بدي منكم شي قبل ما ترجعوا:</p>
+      <p>دوروا بتاريخكم — تطبيق الشات يلي بتستخدموه — وجيبوا ثلاث برومبتات <b>حقيقية</b> كتبتوها إنتوا، مش شي مختلق.</p>
+      <p>شي متل "اشرحلي الجاذبية"، أو "ساعدني بموضوعي"، أو "شو أكل منيح".</p>
+      <p>لما نرجع، رح نعيد كتابتهم سوا، لايف، قدام بعض.</p>
+      <p class="pause">[ ══ رجعنا بعد 10 دقايق ══ ]</p>
+    </div>
+
+    <div class="pause">[ ══ قطع + انتقال للمختبر العملي ══ ]</div>
+
+    <div class="block" data-slide="lab-1">
+      <span class="tag"><span class="dot"></span>بلوك 7 / سلايد المختبر — تمرين 1: تجديد البرومبت</span>
+      <p>طيب رجعنا. المختبر العملي. ثلاث تمارين، كل وحدة تقريباً 10 دقايق.</p>
+      <p><b>تمرين 1 — تجديد البرومبت:</b></p>
+      <p>خذوا الثلاث برومبتات يلي جبتوهم من البريك.</p>
+      <p>أعيدوا كتابة كل وحدة فيهم باستخدام المكونات الخمسة — Role, Context, Task, Format, Examples.</p>
+      <p>شغّلوا النسختين — القديمة والجديدة — وقارنوا الأجوبة جنب بعض.</p>
+      <p class="pause">[ ══ وقفة — دور بالصف، اسمع من 2-3 أشخاص ══ ]</p>
+      <p>مثال لو حدا محتاج قالب يبلش منه: <i>"ساعدني بموضوعي"</i> بتصير:</p>
+      <p><i>"تصرف كمدرّب كتابة صارم. هاد مقال تقديم جامعي، 500 كلمة، عن تجاوز تحدي، وموعد تسليمه بكرا. حدد أضعف ثلاث جمل وليش، بقائمة مرقمة."</i></p>
+    </div>
+
+    <div class="block" data-slide="lab-2">
+      <span class="tag"><span class="dot"></span>بلوك 8 / سلايد المختبر — تمرين 2: وجهاً لوجه</span>
+      <p><b>تمرين 2 — وجهاً لوجه:</b></p>
+      <p>اتقسموا زوجين. نفس الهدف لكلاكما: "خطة دراسة لامتحان الرياضيات الأسبوع الجاي."</p>
+      <p>كل واحد بكتب برومبته لحاله، من غير ما يشوف التاني.</p>
+      <p>قارنوا النتيجتين — وبعدين ادمجوا أحسن جزء من كل وحدة.</p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p>الدرس الحقيقي هون: ما في برومبت واحد كامل. الدمج هو الدرس.</p>
+    </div>
+
+    <div class="block" data-slide="lab-3">
+      <span class="tag"><span class="dot"></span>بلوك 9 / سلايد المختبر — تمرين 3: مرونة الشكل</span>
+      <p><b>تمرين 3 — مرونة الشكل:</b></p>
+      <p>خذوا جواب منيح من قبل شوي.</p>
+      <p>اطلبوا من الـAI يعيد صياغته: جدول ← ملخص ← أسئلة كويز ← نسخة بطول تويت.</p>
+      <p>لاحظوا شو كل شكل بيخسره وشو بيكسبه.</p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p><b>نفس المحتوى. أربع أدوات مختلفة.</b></p>
+      <p>الـFormat مش تفصيل إضافي — هو مكوّن أساسي بحد ذاته.</p>
+    </div>
+
+    <div class="pause">[ ══ قطع + انتقال للختام ══ ]</div>
+
+    <div class="block" data-slide="close">
+      <span class="tag"><span class="dot"></span>بلوك 10 / سلايد الختام — الخلاصة</span>
+      <p>كتابة البرومبت مهارة، مش خدعة.</p>
+      <p>غامض بيدخل، غامض بيطلع — بس برومبت قوي بيفتحلك قدرات حاسّينها كأنها سحر.</p>
+      <p>لأنك أخيراً حكيت للـAI بالظبط شو قصدك.</p>
+      <p class="pause">[ ══ وقفة ══ ]</p>
+      <p>ثلاث أشيا سووها الليلة:</p>
+      <p>ابدأوا دفتر برومبتات — واحفظوا فيه الثلاث تجديدات يلي سويناها اليوم.</p>
+      <p>أعيدوا كتابة برومبت حقيقي من شغلكم باستخدام المكونات الخمسة.</p>
+      <p>اقرأوا الفصل الثاني بالكتاب المرافق — Recipe Book — للمرجع الكامل.</p>
+      <p class="pause">[ ══ وقفة أخيرة ══ ]</p>
+      <p><b>كل جواب منيح بيبلش بسؤال أحسن.</b></p>
+      <p>أنا أحمد قدّورة. شكراً إلكم، ونشوفكم بالجلسة الجاية.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const wrap = document.getElementById('wrap');
+  const blocks = Array.from(document.querySelectorAll('.block'));
+  const railFill = document.getElementById('railFill');
+  const blockNum = document.getElementById('blockNum');
+  const blockTotal = document.getElementById('blockTotal');
+  blockTotal.textContent = blocks.length;
+
+  let playing = false;
+  let speed = 3;       // 1..10 -> px per tick
+  let fontSize = 24;   // px, doubled visually via rem base
+  let currentBlockIdx = 0;
+  let intervalId = null;
+  const TICK_MS = 16;
+
+  function applyFont(){
+    document.documentElement.style.setProperty('--fs', (fontSize/10) + 'rem');
+    document.getElementById('fontVal').textContent = fontSize;
+  }
+  function applySpeed(){
+    document.getElementById('spdVal').textContent = speed;
+  }
+  applyFont(); applySpeed();
+
+  function updateProgress(){
+    const max = stage.scrollHeight - stage.clientHeight;
+    const pct = max > 0 ? (stage.scrollTop / max) * 100 : 0;
+    railFill.style.width = pct + '%';
+  }
+
+  function updateCurrentBlock(){
+    const mid = stage.scrollTop + stage.clientHeight * 0.35;
+    let idx = 0;
+    for (let i = 0; i < blocks.length; i++){
+      if (blocks[i].offsetTop <= mid) idx = i;
+    }
+    if (idx !== currentBlockIdx){
+      currentBlockIdx = idx;
+      blocks.forEach(b => b.classList.remove('current'));
+      blocks[idx].classList.add('current');
+      blockNum.textContent = idx + 1;
+    }
+  }
+
+  function tick(){
+    stage.scrollTop += speed * 0.6;
+    updateProgress();
+    updateCurrentBlock();
+  }
+
+  const playBtn = document.getElementById('playBtn');
+  function setPlaying(p){
+    playing = p;
+    playBtn.textContent = playing ? '⏸ إيقاف' : '▶ تشغيل';
+    playBtn.classList.toggle('active', playing);
+    if (playing) intervalId = setInterval(tick, TICK_MS);
+    else clearInterval(intervalId);
+  }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+
+  document.getElementById('spdUp').addEventListener('click', () => { speed = Math.min(10, speed+1); applySpeed(); });
+  document.getElementById('spdDown').addEventListener('click', () => { speed = Math.max(1, speed-1); applySpeed(); });
+  document.getElementById('fontUp').addEventListener('click', () => { fontSize = Math.min(60, fontSize+2); applyFont(); });
+  document.getElementById('fontDown').addEventListener('click', () => { fontSize = Math.max(14, fontSize-2); applyFont(); });
+
+  document.getElementById('nextBlock').addEventListener('click', () => {
+    currentBlockIdx = Math.min(blocks.length-1, currentBlockIdx+1);
+    blocks[currentBlockIdx].scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  document.getElementById('prevBlock').addEventListener('click', () => {
+    currentBlockIdx = Math.max(0, currentBlockIdx-1);
+    blocks[currentBlockIdx].scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  const dimBtn = document.getElementById('dimToggle');
+  dimBtn.addEventListener('click', () => {
+    stage.classList.toggle('dim');
+    dimBtn.classList.toggle('active');
+  });
+
+  stage.addEventListener('scroll', () => { updateProgress(); updateCurrentBlock(); });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space'){ e.preventDefault(); setPlaying(!playing); }
+    else if (e.code === 'ArrowDown'){ e.preventDefault(); document.getElementById('nextBlock').click(); }
+    else if (e.code === 'ArrowUp'){ e.preventDefault(); document.getElementById('prevBlock').click(); }
+    else if (e.key === '+' || e.key === '='){ fontSize = Math.min(60, fontSize+2); applyFont(); }
+    else if (e.key === '-'){ fontSize = Math.max(14, fontSize-2); applyFont(); }
+  });
+
+  blocks[0].classList.add('current');
+})();
+</script>
+</body>
+</html>

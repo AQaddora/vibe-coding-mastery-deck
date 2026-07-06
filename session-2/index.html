@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Vibe Coding Mastery · Session 2 — The Art of Prompting. By Ahmed Qaddoura.">
+<title>The Art of Prompting · Session 2 · Ahmed Qaddoura</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+
+<style>
+:root{
+  --bg:#000; --bg-soft:#0A0A0F; --panel:#0E1119; --card:#11131A;
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --txt:#fff; --txt2:#A8B0C0; --muted:#5E6678;
+  --accent:#E10E1F; --accent-soft:#FF2A3F; --accent-deep:#7A0712; --glow:rgba(225,14,31,.45);
+  --done:#22C55E; --flight:#F59E0B; --queued:#475569;
+  --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Inter',system-ui,sans-serif;
+}
+
+/* ---------- base ---------- */
+html,body{background:#000;margin:0;padding:0;}
+.reveal-viewport{background:transparent !important;}
+.reveal{font-family:var(--sans);color:var(--txt2);font-weight:400;font-size:30px;}
+.reveal .slides{text-align:left;}
+.reveal .slides section{padding:12px 84px;box-sizing:border-box;}
+.reveal h1,.reveal h2,.reveal h3{font-family:var(--sans);color:#fff;font-weight:900;
+  letter-spacing:-.03em;line-height:1.02;text-transform:none;margin:0 0 .35em;}
+.reveal h2{font-size:2.15rem;}
+.reveal h3{font-size:1.35rem;font-weight:800;}
+.reveal p{color:var(--txt2);line-height:1.55;}
+.reveal strong{color:#fff;font-weight:700;}
+.reveal em{color:var(--accent-soft);font-style:normal;}
+.reveal a{color:var(--accent-soft);text-decoration:none;border-bottom:1px solid rgba(255,42,63,.35);}
+.reveal code{font-family:var(--mono);font-size:.85em;}
+.acc{color:var(--accent);}
+.dim{color:var(--muted);font-weight:600;}
+
+/* ---------- background layers ---------- */
+.bg-layer{position:fixed;inset:0;pointer-events:none;}
+.bg-grid{z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 45%,#000 10%,transparent 85%);
+          mask-image:radial-gradient(ellipse 80% 80% at 50% 45%,#000 10%,transparent 85%);
+  animation:gridPan 24s linear infinite;}
+.bg-glow{z-index:0;background:radial-gradient(ellipse 55% 50% at 50% 38%,rgba(225,14,31,.16),transparent 62%);}
+.bg-vignette{z-index:1;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.85) 100%);}
+.bg-noise{z-index:1;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+@keyframes gridPan{from{background-position:0 0,0 0}to{background-position:64px 64px,64px 64px}}
+
+/* ---------- HUD chrome ---------- */
+.hud{position:fixed;z-index:60;pointer-events:none;font-family:var(--mono);
+  font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);}
+.hud.tl{top:22px;left:30px;color:var(--accent);}
+.hud.tr{top:22px;right:30px;}
+.hud.bl{bottom:20px;left:30px;display:flex;align-items:center;gap:.5rem;}
+.hud .live{width:8px;height:8px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 10px var(--accent);animation:blink 2s infinite;}
+.side-rail{position:fixed;top:34vh;width:3px;height:32vh;z-index:55;pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--accent),transparent);
+  box-shadow:0 0 14px var(--glow);animation:pulseGlow 4s ease-in-out infinite;}
+.side-rail.l{left:14px;} .side-rail.r{right:14px;}
+.scan{position:fixed;left:0;right:0;top:0;height:2px;z-index:58;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(225,14,31,.85),transparent);
+  filter:blur(.4px);animation:scan 7s linear infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes pulseGlow{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes scan{0%{transform:translateY(0);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translateY(100vh);opacity:0}}
+
+/* ---------- shared bits ---------- */
+.kicker{font-family:var(--mono);font-size:.66rem;font-weight:500;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:1.1rem;display:block;}
+.pill{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);
+  font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--txt2);
+  border:1px solid rgba(225,14,31,.45);border-radius:999px;padding:.4rem .85rem;margin-bottom:1.4rem;}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 10px var(--accent);animation:blink 2s infinite;}
+.lede{font-size:1.15rem;color:var(--txt2);max-width:20ch;line-height:1.5;margin:1.2rem 0 0;}
+.punch{margin-top:1.4rem;font-size:1.4rem;font-weight:800;color:#fff;}
+.rule{margin-top:1.2rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;
+  color:var(--accent-soft);border-left:2px solid var(--accent);padding-left:.8rem;}
+
+/* bullets */
+.bullets{list-style:none;margin:0;padding:0;}
+.bullets li{position:relative;padding:.62rem 0 .62rem 1.8rem;font-size:1.02rem;
+  color:var(--txt2);border-bottom:1px solid var(--line);}
+.bullets li::before{content:"›";position:absolute;left:.25rem;top:.55rem;color:var(--accent);
+  font-weight:700;font-size:1.1rem;}
+.bullets li strong{color:#fff;}
+.bullets li code{color:var(--accent-soft);background:rgba(225,14,31,.1);padding:.1rem .4rem;border-radius:4px;}
+.bullets.yn li.no::before{content:"✕";color:var(--accent);}
+.bullets.yn li.yes::before{content:"✓";color:var(--done);}
+.bullets.num{counter-reset:b;}
+.bullets.num li{padding-left:2.6rem;}
+.bullets.num li::before{counter-increment:b;content:counter(b,decimal-leading-zero);
+  font-family:var(--mono);font-size:.85rem;font-weight:700;color:var(--accent);top:.7rem;left:.1rem;}
+
+/* hud box */
+.hud-box{position:relative;padding:1.3rem 1.5rem;border:1px dashed rgba(225,14,31,.35);background:rgba(10,10,15,.4);}
+.hud-box::before,.hud-box::after,.hud-box>.c1,.hud-box>.c2{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--accent);}
+.hud-box::before{top:-2px;left:-2px;border-right:none;border-bottom:none;}
+.hud-box::after{top:-2px;right:-2px;border-left:none;border-bottom:none;}
+.hud-box>.c1{bottom:-2px;left:-2px;border-right:none;border-top:none;}
+.hud-box>.c2{bottom:-2px;right:-2px;border-left:none;border-top:none;}
+
+/* ---------- title slide ---------- */
+.title-split{display:grid;grid-template-columns:1.15fr .85fr;align-items:center;gap:1.5rem;}
+.s-title .hero h1{font-size:clamp(2.6rem,5.6vw,5.2rem);font-weight:900;line-height:.9;letter-spacing:-.04em;margin:.3rem 0;}
+.meta-row{margin-top:1.6rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--muted);}
+.meta-row span{color:var(--accent-soft);}
+.brand{position:relative;display:flex;align-items:center;justify-content:center;}
+.brand::before{content:"";position:absolute;width:86%;height:86%;border-radius:50%;
+  background:radial-gradient(circle,rgba(225,14,31,.30),transparent 62%);filter:blur(22px);z-index:0;}
+.brand-logo{position:relative;z-index:1;width:min(82%,380px);height:auto;
+  filter:drop-shadow(0 0 26px rgba(225,14,31,.5));animation:float 9s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.close-logo{width:74px;height:auto;margin-bottom:1.3rem;filter:drop-shadow(0 0 16px rgba(225,14,31,.5));
+  animation:float 9s ease-in-out infinite;}
+
+/* ---------- statement slide ---------- */
+.s-statement{display:flex;flex-direction:column;justify-content:center;}
+.statement{font-size:clamp(1.9rem,4.4vw,3.3rem);font-weight:900;line-height:1.08;
+  letter-spacing:-.03em;color:#fff;max-width:22ch;}
+.statement .acc{color:var(--accent);}
+.s-statement .quote-mark{font-family:var(--mono);font-size:3rem;color:var(--accent);opacity:.5;line-height:0;}
+
+/* ---------- section divider ---------- */
+.divider-wrap{display:flex;align-items:center;gap:2.4rem;}
+.divider-wrap .num{font-family:var(--mono);font-weight:800;font-size:12rem;line-height:.8;
+  color:transparent;-webkit-text-stroke:2px rgba(225,14,31,.55);text-stroke:2px rgba(225,14,31,.55);}
+.divider-wrap h2{font-size:3rem;margin:.2rem 0;}
+.divider-wrap .sub{font-size:1.1rem;color:var(--txt2);max-width:26ch;}
+.divider-wrap .time{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;color:var(--muted);margin-top:.8rem;}
+
+/* ---------- phase slide ---------- */
+.phase-grid{display:grid;grid-template-columns:auto 1fr;gap:2.2rem;align-items:start;}
+.phase-letter{font-family:var(--sans);font-weight:900;font-size:9rem;line-height:.8;
+  color:transparent;-webkit-text-stroke:3px var(--accent);text-stroke:3px var(--accent);
+  text-shadow:0 0 40px var(--glow);}
+.phase-body h2{font-size:1.9rem;margin-bottom:.6rem;}
+
+/* ---------- terminal / code ---------- */
+.term{background:#06070b;border:1px solid var(--line-strong);border-radius:11px;overflow:hidden;
+  box-shadow:0 36px 90px rgba(0,0,0,.65),0 0 0 1px rgba(225,14,31,.18),0 0 60px rgba(225,14,31,.08);}
+.term .bar{display:flex;align-items:center;gap:.5rem;padding:.65rem .95rem;background:#0c0e14;border-bottom:1px solid var(--line);}
+.term .bar i{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.term .bar .t{margin-left:.7rem;font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;color:var(--muted);}
+.term pre{margin:0;padding:1.2rem 1.4rem;background:transparent;box-shadow:none;width:100%;}
+.term code{font-family:var(--mono);font-size:.78rem;line-height:1.75;color:var(--txt2);white-space:pre;display:block;}
+.term .k{color:var(--accent-soft);}
+.term .p{color:var(--done);}
+.term .c{color:var(--muted);}
+.term .o{color:#fff;}
+
+/* ---------- flow / loop diagram ---------- */
+.flow{display:flex;align-items:stretch;gap:.6rem;margin-top:1.4rem;}
+.flow .node{flex:1;text-align:center;padding:1.3rem .6rem;border:1px solid var(--line-strong);
+  border-radius:10px;background:linear-gradient(180deg,rgba(225,14,31,.07),rgba(10,10,15,.5));position:relative;}
+.flow .node .L{display:block;font-weight:900;font-size:2.6rem;color:#fff;line-height:1;}
+.flow .node .n{display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;color:var(--accent);margin-top:.4rem;}
+.flow .node .d{display:block;font-size:.72rem;color:var(--muted);margin-top:.5rem;line-height:1.3;}
+.flow .arrow{display:flex;align-items:center;color:var(--accent);font-size:1.4rem;font-weight:700;}
+.loopnote{margin-top:1.1rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--txt2);
+  display:flex;align-items:center;gap:.6rem;}
+.loopnote::before{content:"↻";color:var(--accent);font-size:1.2rem;}
+
+/* time budget bars */
+.budget{margin-top:1.2rem;display:flex;flex-direction:column;gap:1rem;max-width:80%;}
+.brow{display:grid;grid-template-columns:9rem 1fr auto;align-items:center;gap:1rem;}
+.brow .lbl{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;color:#fff;}
+.brow .lbl b{color:var(--accent);}
+.bar{height:8px;background:#15171f;border-radius:5px;overflow:hidden;}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-deep),var(--accent));box-shadow:0 0 12px var(--glow);}
+.brow .val{font-family:var(--mono);font-size:.72rem;color:var(--txt2);}
+
+/* cards grid */
+.grid{display:grid;gap:1rem;margin-top:1.2rem;}
+.grid.g2{grid-template-columns:1fr 1fr;}
+.grid.g4{grid-template-columns:repeat(4,1fr);}
+.grid.g5{grid-template-columns:repeat(5,1fr);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:1.1rem 1.2rem;position:relative;transition:.25s;}
+.card .big{font-size:2.2rem;font-weight:900;color:#fff;line-height:1;}
+.card .cl{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-top:.5rem;display:block;}
+.card p{font-size:.82rem;margin:.4rem 0 0;color:var(--txt2);}
+.card h3{font-size:1.05rem;}
+
+/* ingredient table */
+.ptable{width:100%;border-collapse:collapse;margin-top:1.1rem;font-size:.82rem;}
+.ptable th{text-align:left;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);padding:.5rem .7rem;border-bottom:1px solid var(--line-strong);}
+.ptable td{padding:.6rem .7rem;border-bottom:1px solid var(--line);vertical-align:top;}
+.ptable td.ing{color:#fff;font-weight:800;white-space:nowrap;}
+.ptable td.ex{color:var(--txt2);font-style:italic;}
+
+/* skill chips */
+.chipset{margin-top:1rem;}
+.chipset .grp{margin-bottom:.9rem;}
+.chipset .gt{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:.45rem;}
+.chip{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--accent-soft);
+  border:1px solid rgba(225,14,31,.4);border-radius:6px;padding:.28rem .6rem;margin:0 .35rem .4rem 0;}
+.chip.green{color:var(--done);border-color:rgba(34,197,94,.4);}
+
+/* quote slide */
+.s-quote{display:flex;flex-direction:column;justify-content:center;}
+.bigquote{font-size:clamp(1.6rem,3.6vw,2.7rem);font-weight:800;color:#fff;line-height:1.18;
+  letter-spacing:-.02em;max-width:24ch;border-left:3px solid var(--accent);padding-left:1.4rem;}
+.attr{margin-top:1.4rem;font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;color:var(--accent);text-transform:uppercase;}
+
+/* CTA */
+.cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.4rem;}
+.cta{display:flex;flex-direction:column;gap:.3rem;background:var(--card);border:1px solid var(--line);
+  border-radius:11px;padding:1.1rem 1.3rem;position:relative;overflow:hidden;}
+.cta::after{content:"↗";position:absolute;top:1rem;right:1.2rem;color:var(--accent);font-size:1.1rem;}
+.cta .t{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;}
+.cta .v{font-size:1.05rem;font-weight:700;color:#fff;}
+
+/* demo / lab badge */
+.rec{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--mono);font-size:.66rem;
+  letter-spacing:.2em;color:#fff;border:1px solid rgba(225,14,31,.5);border-radius:6px;padding:.35rem .7rem;margin-bottom:1.2rem;}
+.rec .d{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:blink 1.4s infinite;}
+
+/* fragments + reveal chrome */
+.reveal .progress{color:var(--accent);height:4px;}
+.reveal .controls{color:var(--accent);}
+.reveal .slide-number{background:transparent;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--muted);right:30px;bottom:18px;}
+.reveal .slide-number a{border:none;}
+
+/* closing */
+.s-close{display:flex;flex-direction:column;justify-content:center;}
+.s-close h1{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:900;letter-spacing:-.03em;line-height:1.05;max-width:18ch;}
+.s-close .sig{margin-top:1.6rem;font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;color:var(--accent);}
+
+@media (max-width:700px){
+  .divider-wrap{gap:1.2rem;} .divider-wrap .num{font-size:7rem;}
+  .phase-grid{grid-template-columns:1fr;} .phase-letter{font-size:5rem;}
+  .grid.g4{grid-template-columns:1fr 1fr;} .grid.g5{grid-template-columns:1fr 1fr;} .cta-grid,.grid.g2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-layer bg-grid"></div>
+<div class="bg-layer bg-glow"></div>
+<div class="bg-layer bg-noise"></div>
+<div class="bg-layer bg-vignette"></div>
+<div class="side-rail l"></div>
+<div class="side-rail r"></div>
+<div class="scan"></div>
+<div class="hud tl">VIBE://CODING.MASTERY</div>
+<div class="hud tr">AHMED&nbsp;QADDOURA</div>
+<div class="hud bl"><span class="live"></span> SESSION&nbsp;02 · THE&nbsp;ART&nbsp;OF&nbsp;PROMPTING</div>
+
+<div class="reveal">
+<div class="slides">
+
+<!-- ============ 0 · PRE-ROLL ============ -->
+<section data-transition="fade" class="s-title">
+  <div class="title-split">
+    <div class="hero">
+      <span class="pill"><span class="dot"></span> Session 2 · Live</span>
+      <span class="kicker">Ahmed Qaddoura · @VibeCodingArabic</span>
+      <h1>THE ART<br>OF <span class="acc">PROMPTING</span></h1>
+      <p class="lede">Same AI, wildly different results — depending entirely on how you ask.</p>
+      <div class="meta-row">AI Mastery: The Recipe Book · <span>Chapter 02</span></div>
+    </div>
+    <div class="brand">
+      <img src="logo.png" alt="Ahmed Qaddoura — AQ" class="brand-logo">
+    </div>
+  </div>
+  <aside class="notes">Welcome back. Session 2 builds directly on Session 1 — same discipline, now aimed at the words themselves.</aside>
+</section>
+
+<section data-transition="fade" class="s-statement">
+  <span class="kicker">Pre-Roll</span>
+  <div class="quote-mark">“</div>
+  <h2 class="statement">You've been getting <span class="acc">lucky</span> with AI — not good.</h2>
+  <aside class="notes">Let it land. No bullets. This is the whole problem in one line.</aside>
+</section>
+
+<!-- ============ DIVIDER 01 ============ -->
+<section data-transition="zoom" class="s-divider">
+  <div class="divider-wrap">
+    <div class="num">01</div>
+    <div>
+      <span class="kicker">Section 01</span>
+      <h2>Why Prompting<br>Is a Skill</h2>
+      <p class="sub">The gap between a lucky answer and a reliable one.</p>
+      <div class="time">⏱ 0:00 – 0:15</div>
+    </div>
+  </div>
+  <aside class="notes">Cold open. Land the idea that prompting is a learnable, repeatable skill — not luck.</aside>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 01 · Cold Open</span>
+  <h2>The same question,<br><span class="acc">two wildly different answers</span></h2>
+  <ul class="bullets">
+    <li class="fragment fade-up">"Explain gravity" → a generic textbook paragraph.</li>
+    <li class="fragment fade-up">"Act as a patient physics tutor explaining gravity to a curious 10-year-old, using one everyday analogy" → something that actually teaches.</li>
+    <li class="fragment fade-up">Same model. Same day. <strong>Only the ask changed.</strong></li>
+  </ul>
+  <p class="punch fragment fade-up">"Garbage in, garbage out — but great prompts feel like magic."</p>
+  <aside class="notes">Live-read both prompts if possible, or have them pre-run. The contrast is the whole hook.</aside>
+</section>
+
+<section data-transition="fade" class="s-statement">
+  <span class="kicker">The Core Problem</span>
+  <h2 class="statement">The AI isn't the bottleneck.<br>Your <span class="acc">instructions</span> are.</h2>
+  <ul class="bullets" style="margin-top:1.6rem;max-width:30ch;">
+    <li class="fragment fade-up">Vague ask → vague, average answer</li>
+    <li class="fragment fade-up">Precise ask → an answer built for exactly your situation</li>
+  </ul>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 01 · Definition</span>
+  <h2>What prompting <span class="acc">actually is</span></h2>
+  <ul class="bullets yn">
+    <li class="no fragment fade-up">A magic incantation or a secret trick</li>
+    <li class="no fragment fade-up">Something only "prompt engineers" can do</li>
+    <li class="yes fragment fade-up">Giving the AI the same context you'd give a smart new hire</li>
+    <li class="yes fragment fade-up">A repeatable skill: <strong>ask well → get it right → iterate</strong></li>
+  </ul>
+</section>
+
+<section data-transition="fade" class="s-statement">
+  <h2 class="statement">"Prompting is a skill,<br>not a <span class="acc">trick.</span>"</h2>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 01 · The Payoff</span>
+  <h2>What you'll <span class="acc">leave with</span></h2>
+  <ul class="bullets num">
+    <li class="fragment fade-up">The <strong>5 ingredients</strong> of a great prompt — a repeatable recipe</li>
+    <li class="fragment fade-up">The iteration moves that fix a bad answer without starting over</li>
+    <li class="fragment fade-up">Four golden rules you can apply to literally any AI conversation</li>
+    <li class="fragment fade-up">Three hands-on drills to build the habit tonight</li>
+  </ul>
+</section>
+
+<!-- ============ DIVIDER 02 ============ -->
+<section data-transition="zoom" class="s-divider">
+  <div class="divider-wrap">
+    <div class="num">02</div>
+    <div>
+      <span class="kicker">Section 02</span>
+      <h2>The 5<br>Ingredients</h2>
+      <p class="sub">Role · Context · Task · Format · Examples.</p>
+      <div class="time">⏱ 0:15 – 0:50</div>
+    </div>
+  </div>
+  <aside class="notes">Goal: every attendee can name and use all 5 ingredients unprompted. ~35 min.</aside>
+</section>
+
+<section data-transition="convex" class="s-diagram">
+  <span class="kicker">Section 02 · The Recipe</span>
+  <h2>R <span class="acc">·</span> C <span class="acc">·</span> T <span class="acc">·</span> F <span class="acc">·</span> E</h2>
+  <div class="flow">
+    <div class="node"><span class="L">R</span><span class="n">Role</span><span class="d">Who to be</span></div>
+    <div class="arrow">→</div>
+    <div class="node"><span class="L">C</span><span class="n">Context</span><span class="d">Background</span></div>
+    <div class="arrow">→</div>
+    <div class="node"><span class="L">T</span><span class="n">Task</span><span class="d">Exact ask</span></div>
+    <div class="arrow">→</div>
+    <div class="node"><span class="L">F</span><span class="n">Format</span><span class="d">Shape of output</span></div>
+    <div class="arrow">→</div>
+    <div class="node"><span class="L">E</span><span class="n">Examples</span><span class="d">What "good" looks like</span></div>
+  </div>
+  <p class="loopnote">Not every prompt needs all 5 — but every <strong>weak</strong> prompt is missing at least one.</p>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 02 · The Table</span>
+  <h2>The 5 ingredients,<br><span class="acc">side by side</span></h2>
+  <table class="ptable">
+    <tr><th>Ingredient</th><th>What it does</th><th>Example</th></tr>
+    <tr><td class="ing">Role</td><td>Tells AI who to be</td><td class="ex">"Act as a patient biology tutor."</td></tr>
+    <tr><td class="ing">Context</td><td>Gives background</td><td class="ex">"I'm 15, studying for a test on cells."</td></tr>
+    <tr><td class="ing">Task</td><td>The exact ask</td><td class="ex">"Explain the parts of a cell."</td></tr>
+    <tr><td class="ing">Format</td><td>How you want it</td><td class="ex">"Use a table, one analogy per row."</td></tr>
+    <tr><td class="ing">Examples</td><td>Shows what good looks like</td><td class="ex">"Like: Mitochondria = the battery."</td></tr>
+  </table>
+  <aside class="notes">Walk the table row by row before showing the combined prompt.</aside>
+</section>
+
+<section data-transition="fade" class="s-statement">
+  <h2 class="statement">Five ingredients.<br>One <span class="acc">sentence.</span></h2>
+</section>
+
+<section data-transition="slide" class="s-code">
+  <span class="kicker">Section 02 · Put It Together</span>
+  <h2>The <span class="acc">combined</span> prompt</h2>
+  <div class="term" style="margin-top:1rem;max-width:88%;">
+    <div class="bar"><i style="background:#FF5F56"></i><i style="background:#FFBD2E"></i><i style="background:#27C93F"></i><span class="t">prompt.txt</span></div>
+    <pre><code><span class="o">"Act as a patient biology tutor.</span>
+<span class="k">I'm 15,</span> studying for a cell biology test and I
+find diagrams confusing.
+<span class="p">Explain</span> the main parts of a cell
+<span class="p">in a simple table,</span> with one everyday
+analogy for each."</code></pre>
+  </div>
+  <p class="rule fragment fade-up">Role + Context + Task + Format — four ingredients, one clean ask.</p>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 02 · Golden Rules</span>
+  <h2>Four rules that <span class="acc">always apply</span></h2>
+  <ul class="bullets num">
+    <li class="fragment fade-up"><strong>Be specific.</strong> Vague in → vague out.</li>
+    <li class="fragment fade-up"><strong>Give context.</strong> The AI can't read your mind.</li>
+    <li class="fragment fade-up"><strong>Ask for a format.</strong> Table, bullets, word count, step-by-step.</li>
+    <li class="fragment fade-up"><strong>Always fact-check</strong> anything that actually matters.</li>
+  </ul>
+</section>
+
+<section data-transition="fade" class="s-statement">
+  <h2 class="statement">"Vague in.<br><span class="acc">Vague out.</span>"</h2>
+</section>
+
+<!-- ============ DIVIDER 03 ============ -->
+<section data-transition="zoom" class="s-divider">
+  <div class="divider-wrap">
+    <div class="num">03</div>
+    <div>
+      <span class="kicker">Section 03</span>
+      <h2>Iteration<br>Beats Repetition</h2>
+      <p class="sub">Don't restart on a bad answer — refine it.</p>
+      <div class="time">⏱ 0:50 – 1:05</div>
+    </div>
+  </div>
+  <aside class="notes">The habit that compounds: never throw away a mediocre answer, steer it.</aside>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 03 · The Habit</span>
+  <h2>When the answer's <span class="acc">not quite right</span></h2>
+  <ul class="bullets yn">
+    <li class="no fragment fade-up">Close the chat and start a brand-new prompt from scratch</li>
+    <li class="yes fragment fade-up">Push back in the same thread — the AI already has the context</li>
+  </ul>
+  <p class="punch fragment fade-up">Iteration is faster than repetition, every time.</p>
+</section>
+
+<section data-transition="convex" class="s-diagram">
+  <span class="kicker">Section 03 · The Follow-Up Moves</span>
+  <h2>Five moves that <span class="acc">fix almost anything</span></h2>
+  <div class="grid g5">
+    <div class="card"><p>"Make that<br>shorter."</p></div>
+    <div class="card"><p>"Explain point 3<br>more simply."</p></div>
+    <div class="card"><p>"Give me a<br>concrete example."</p></div>
+    <div class="card"><p>"Reformat this<br>as a table."</p></div>
+    <div class="card"><p>"What should I<br>be asking that<br>I haven't?"</p></div>
+  </div>
+  <p class="loopnote">Five moves. Memorize them — they cover 90% of bad first answers.</p>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 03 · The Habit That Compounds</span>
+  <h2>Keep a <span class="acc">prompt journal</span></h2>
+  <ul class="bullets">
+    <li class="fragment fade-up">Save prompts that actually worked — don't rebuild them from memory next time</li>
+    <li class="fragment fade-up">Reuse and refine them across projects</li>
+    <li class="fragment fade-up">Your journal becomes a personal library of proven recipes</li>
+  </ul>
+  <p class="rule fragment fade-up">A working prompt saved once is worth ten rewritten from scratch.</p>
+</section>
+
+<!-- ============ BREAK · LAB SETUP ============ -->
+<section data-transition="zoom" class="s-break">
+  <span class="pill"><span class="dot"></span> Break · 10 Minutes</span>
+  <h2>Grab <span class="acc">3 weak prompts</span> while you stretch</h2>
+  <p class="lede" style="max-width:40ch;margin-top:.6rem;">Pull them from your own history — a real search you typed, a real ask you made. We rebuild them live in the next block.</p>
+  <div class="term" style="margin-top:1.1rem;max-width:82%;">
+    <div class="bar"><i style="background:#FF5F56"></i><i style="background:#FFBD2E"></i><i style="background:#27C93F"></i><span class="t">bring 3 real prompts</span></div>
+    <pre><code><span class="c"># e.g. things you've actually typed:</span>
+<span class="o">"explain gravity"</span>
+<span class="o">"help with my essay"</span>
+<span class="o">"what's good food"</span></code></pre>
+  </div>
+  <p class="rule">Back in 10 — come back with your 3 prompts written down. ☕</p>
+  <aside class="notes">BREAK. Say: bring real weak prompts, not invented ones — the makeover lands harder with real stakes.</aside>
+</section>
+
+<!-- ============ DIVIDER 04 ============ -->
+<section data-transition="zoom" class="s-divider">
+  <div class="divider-wrap">
+    <div class="num">04</div>
+    <div>
+      <span class="kicker">Section 04</span>
+      <h2>The Practical<br>Lab</h2>
+      <p class="sub">Three exercises, done live, in the room.</p>
+      <div class="time">⏱ 1:15 – 1:55</div>
+    </div>
+  </div>
+  <aside class="notes">After break. Three hands-on drills, each ~12 min. Circulate and coach.</aside>
+</section>
+
+<section data-transition="convex" class="s-list">
+  <span class="rec"><span class="d"></span> LAB · 01</span>
+  <h2>Exercise 1 — <span class="acc">prompt makeover</span></h2>
+  <ul class="bullets num">
+    <li class="fragment fade-up">Take your 3 weak prompts from the break</li>
+    <li class="fragment fade-up">Rewrite each using the 5 ingredients — Role, Context, Task, Format, Examples</li>
+    <li class="fragment fade-up">Run both versions. Compare the outputs side by side</li>
+  </ul>
+  <aside class="notes">10–12 min. Ask 2–3 people to share their before/after out loud.</aside>
+</section>
+
+<section data-transition="slide" class="s-code">
+  <span class="rec"><span class="d"></span> LAB · 01 · Before / After</span>
+  <h2>Makeover in <span class="acc">action</span></h2>
+  <div class="term" style="margin-top:1rem;max-width:88%;">
+    <div class="bar"><i style="background:#FF5F56"></i><i style="background:#FFBD2E"></i><i style="background:#27C93F"></i><span class="t">before → after</span></div>
+    <pre><code><span class="c">before:</span> <span class="o">"help with my essay"</span>
+
+<span class="c">after:</span>
+<span class="p">"Act as a strict writing coach.</span>
+<span class="k">This is a 500-word college application essay</span>
+<span class="k">on overcoming a challenge, due tomorrow.</span>
+<span class="p">Point out the 3 weakest sentences and tell me</span>
+<span class="p">exactly why, in a numbered list."</span></code></pre>
+  </div>
+  <aside class="notes">Use this as the template if no one volunteers their own yet.</aside>
+</section>
+
+<section data-transition="convex" class="s-list">
+  <span class="rec"><span class="d"></span> LAB · 02</span>
+  <h2>Exercise 2 — <span class="acc">head-to-head</span></h2>
+  <ul class="bullets num">
+    <li class="fragment fade-up">Pair up. Same goal for both: <em>"a study plan for next week's math test"</em></li>
+    <li class="fragment fade-up">Each person writes their own prompt, independently</li>
+    <li class="fragment fade-up">Compare results — then merge the best parts of both</li>
+  </ul>
+  <aside class="notes">10 min. The merge step is the real lesson: no single prompt is ever perfect.</aside>
+</section>
+
+<section data-transition="convex" class="s-list">
+  <span class="rec"><span class="d"></span> LAB · 03</span>
+  <h2>Exercise 3 — <span class="acc">format flex</span></h2>
+  <ul class="bullets num">
+    <li class="fragment fade-up">Take one good answer from earlier</li>
+    <li class="fragment fade-up">Ask AI to reformat it: table → summary → quiz questions → tweet-length</li>
+    <li class="fragment fade-up">Notice what each format <strong>loses</strong> and what it <strong>gains</strong></li>
+  </ul>
+  <p class="rule fragment fade-up">Same content, four shapes — format is a lever, not an afterthought.</p>
+  <aside class="notes">10 min. This drives home that Format is its own ingredient, not a nice-to-have.</aside>
+</section>
+
+<section data-transition="fade" class="s-statement">
+  <h2 class="statement">"Same content.<br>Four <span class="acc">different tools.</span>"</h2>
+</section>
+
+<!-- ============ DIVIDER 05 ============ -->
+<section data-transition="zoom" class="s-divider">
+  <div class="divider-wrap">
+    <div class="num">05</div>
+    <div>
+      <span class="kicker">Section 05</span>
+      <h2>Takeaway<br>& Close</h2>
+      <p class="sub">What sticks after the room empties.</p>
+      <div class="time">⏱ 1:55 – 2:10</div>
+    </div>
+  </div>
+</section>
+
+<section data-transition="fade" class="s-quote">
+  <span class="kicker">Section 05 · Philosophy</span>
+  <p class="bigquote">Prompting is a skill, not a trick. Great prompts unlock capabilities that feel like <span class="acc">magic</span> — because you finally told the AI exactly what you meant.</p>
+  <p class="attr">— Chapter 2, AI Mastery: The Recipe Book</p>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 05 · Tonight</span>
+  <h2>Three things to <span class="acc">do tonight</span></h2>
+  <ul class="bullets num">
+    <li class="fragment fade-up"><strong>Start a prompt journal</strong> — save the 3 rewrites from tonight's lab</li>
+    <li class="fragment fade-up"><strong>Rewrite one real prompt</strong> from your own work using all 5 ingredients</li>
+    <li class="fragment fade-up"><strong>Read Chapter 2</strong> in the Recipe Book for the full reference</li>
+  </ul>
+</section>
+
+<section class="s-list">
+  <span class="kicker">Section 05 · Where to go</span>
+  <h2>Keep <span class="acc">building</span></h2>
+  <div class="cta-grid">
+    <div class="cta fragment fade-up"><span class="t">Recipe Book</span><span class="v">ai-recipes.apps.taqat.academy</span></div>
+    <div class="cta fragment fade-up"><span class="t">Telegram</span><span class="v">@VibeCodingArabic</span></div>
+    <div class="cta fragment fade-up"><span class="t">YouTube</span><span class="v">@AhmedQaddora</span></div>
+    <div class="cta fragment fade-up"><span class="t">Taqat Academy</span><span class="v">Vibe Coding Mastery</span></div>
+  </div>
+</section>
+
+<section data-transition="fade" class="s-close">
+  <img src="logo.png" alt="" class="close-logo">
+  <span class="kicker">End of Session 2</span>
+  <h1>Every answer starts<br>with a <span class="acc">better question.</span></h1>
+  <div class="sig">Ahmed Qaddoura · @VibeCodingArabic</div>
+  <aside class="notes">Final line. Land it, then thank the room.</aside>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+Reveal.initialize({
+  width: 1280, height: 720, margin: 0.06,
+  minScale: 0.2, maxScale: 2.0,
+  center: true, hash: true, controls: true, progress: true,
+  slideNumber: 'c/t', transition: 'slide', transitionSpeed: 'default',
+  backgroundTransition: 'fade',
+  plugins: [ RevealNotes ]
+});
+</script>
+</body>
+</html>
